@@ -1,6 +1,4 @@
 import os
-import sys
-
 import requests
 from dotenv import load_dotenv
 from flask import Flask, request
@@ -34,10 +32,10 @@ class VacancyModel(db.Model):
     responsibility = db.Column(db.String(350), nullable=False)
     alternate_url = db.Column(db.String(120), default=False)
     time = db.Column(db.String(70), default=False)
-    time_day = db.Column(db.String(70), default=False)
+    timeDay = db.Column(db.String(70), default=False)
 
     def __init__(self, id, vacancy, employer, address, salaryFrom, salaryTo, requirement, responsibility, alternate_url,
-                 time, time_day):
+                 time, timeDay):
         self.id = id
         self.vacancy = vacancy
         self.employer = employer
@@ -48,7 +46,7 @@ class VacancyModel(db.Model):
         self.responsibility = responsibility
         self.alternate_url = alternate_url
         self.time = time
-        self.time_day = time_day
+        self.timeDay = timeDay
 
     def __repr__(self):
         return [self.vacancy, self.employer, self.address, self.salaryFrom, self.salaryTo, self.requirement,
@@ -126,7 +124,7 @@ def parser(data, text, area):
                                   salaryFrom=salaryFrom, salaryTo=salaryTo,
                                   requirement=requirement, responsibility=responsibility,
                                   alternate_url=vacancy['alternate_url'], time=vacancy['published_at'][:10],
-                                  time_day=vacancy['employment']['name'])
+                                  timeDay=vacancy['employment']['name'])
             db.session.add(resume)
             db.session.commit()
             id += 1
@@ -148,9 +146,9 @@ def serch(regs, area):
 class Vacancy(Resource):
     @staticmethod
     def get():
-        vacancy = request.args.get('vacancy', '')
-        salary_from = request.args.get('salaryFrom', 0)
-        salary_to = request.args.get('salaryTo', sys.maxsize)
+        vacancy = request.args.get('vacancy')
+        salary_from = request.args.get('salaryFrom')
+        salary_to = request.args.get('salaryTo')
         time_day = request.args.get('timeDay', '')
         area = request.args.get('area')
         add_name(vacancy, area)
@@ -158,7 +156,7 @@ class Vacancy(Resource):
         if time_day in ["Полная занятость", "Частичная занятость"]:
             return vacancy_shema.dump(VacancyModel.query.filter(VacancyModel.salaryFrom >= salary_from)
                                       .filter(VacancyModel.salaryTo <= salary_to)
-                                      .filter(VacancyModel.time_day == time_day).all())
+                                      .filter(VacancyModel.timeDay == time_day).all())
         else:
             return vacancy_shema.dump(VacancyModel.query.filter(VacancyModel.salaryFrom >= salary_from)
                                       .filter(VacancyModel.salaryTo <= salary_to).all())
