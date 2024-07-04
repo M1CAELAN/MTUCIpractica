@@ -14,9 +14,13 @@ name = None
 salary_to = 2147483647
 salary_from = 0
 time_day = None
+data = None
+k = 1
 
-@bot.message_handler(commands=['start'])
+@bot.message_handler(commands=['start', 'menu'])
 def start(message):
+    global k
+    k = 1
     markup = types.ReplyKeyboardMarkup()
     btn = types.KeyboardButton("Найти вакансию")
     markup.add(btn)
@@ -27,25 +31,25 @@ def start(message):
 
 def open_search(message):
     if message.text == "Найти вакансию":
-        bot.send_message(message.chat.id, "Введите регион, в котором ищете вакансии")
+        bot.send_message(message.chat.id, "Введите регион, в котором ищете вакансии",
+                         reply_markup=types.ReplyKeyboardRemove())
         bot.register_next_step_handler(message, get_id_region)
     else:
-        bot.send_message(message.chat.id, "Команда не распознана")
-        bot.register_next_step_handler(message, start)
+        bot.send_message(message.chat.id, "Команда не распознана",
+                         reply_markup=types.ReplyKeyboardRemove())
 
 
 def get_id_region(message):
     url = f"http://127.0.0.1:5000/region/{message.text}"
     data = requests.get(url).json()
     global region_id
-    if data["id"] is not None:
-        bot.send_message(message.chat.id, f"Регион установлен, {message.text}")
+    if data.get('id') is not None:
         region_id = data["id"]
         bot.send_message(message.chat.id, "Введите название профессии")
         bot.register_next_step_handler(message, get_name)
     else:
         bot.send_message(message.chat.id, "ошибка, региона не существует, попробуйте ещё раз")
-        bot.register_next_step_handler(get_id_region)
+        bot.register_next_step_handler(message, get_id_region)
 
 
 def get_name(message):
@@ -92,8 +96,51 @@ def get_time_day(message):
         time_day = message.text
     url = f"http://127.0.0.1:5000/vacancy?vacancy={name}&salaryFrom={salary_from}&salaryTo={salary_to}&" \
           f"timeDay={time_day}&area={region_id}"
+    global data
     data = requests.get(url).json()
-    bot.send_message(message.chat.id, data)
+    if not data:
+        bot.send_message(message.chat.id, "Вакансий по запросу не найдено", reply_markup=types.ReplyKeyboardRemove())
+    else:
+        vac = data[0]
+        str = f"{vac['vacancy']}\n" \
+              f"Компания: {vac['employer']}" \
+              f"от{vac['salaryFrom']} до{vac['salaryTo']}\n" \
+              f"Адреc: {vac['address']} \n" \
+              f"Описание: {vac['requirement']}\n"\
+              f"{vac['timeDay']}" \
+              f"Ссылка: {vac['alternate_url']}"
+        markup = types.ReplyKeyboardMarkup()
+        btn1 = types.KeyboardButton("Следующая")
+        btn2 = types.KeyboardButton("Меню")
+        markup.row(btn1,btn2)
+        bot.send_message(message.chat.id, str, reply_markup=markup)
+        bot.register_next_step_handler(message, next_vacancy)
+
+
+def next_vacancy(message):
+    if message.text == 'Следующая':
+        global k
+        vac = data[k]
+        str = f"{vac['vacancy']}\n" \
+              f"Компания: {vac['employer']}" \
+              f"от{vac['salaryFrom']} до{vac['salaryTo']}\n" \
+              f"Адреc: {vac['address']} \n" \
+              f"Описание: {vac['requirement']}\n" \
+              f"{vac['timeDay']}\n" \
+              f"Ссылка: {vac['alternate_url']}"
+        markup = types.ReplyKeyboardMarkup()
+        btn1 = types.KeyboardButton("Следующая")
+        btn2 = types.KeyboardButton("Меню")
+        markup.row(btn1, btn2)
+        bot.send_message(message.chat.id, str, reply_markup=markup)
+        k += 1
+        bot.register_next_step_handler(message, next_vacancy)
+    elif message.text == 'Меню':
+        bot.send_message(message.chat.id, "Напишите /menu", reply_markup=types.ReplyKeyboardRemove())
+    else:
+        bot.send_message(message.chat.id, "Команда не распознана",
+                         reply_markup=types.ReplyKeyboardRemove())
+        bot.register_next_step_handler(message, next_vacancy)
 
 
 bot.polling(none_stop=True)
