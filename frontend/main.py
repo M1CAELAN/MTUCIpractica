@@ -1,5 +1,4 @@
 import os
-import sys
 import telebot
 import requests
 from telebot import types
@@ -16,6 +15,26 @@ salary_from = 0
 time_day = None
 data = None
 k = 1
+
+
+def send_vacancy(vac):
+    salary = 'цена не указана\n'
+    if int(vac['salaryFrom']) != 0 and int(vac['salaryTo']) != 0:
+        salary = f"от {vac['salaryFrom']} до {vac['salaryTo']}\n"
+    elif int(vac['salaryFrom']) != 0 and int(vac['salaryTo']) == 0:
+        salary = f"от {vac['salaryFrom']}\n"
+    elif int(vac['salaryFrom']) == '0' and int(vac['salaryTo']) != 0:
+        salary = f"до {vac['salaryTo']}\n"
+    mes = f"{vac['vacancy']}\n" \
+          f"Компания: {vac['employer']}\n" + salary +\
+          f"Адреc: {vac['address']} \n" \
+          f"Требования: {vac['requirement']}\n" \
+          f"Описание: {vac['requirement']}\n" \
+          f"{vac['timeDay']}\n" \
+          f"Дата публикации: {vac['time']}\n" \
+          f"Ссылка: {vac['alternate_url']}"
+    return mes
+
 
 @bot.message_handler(commands=['start', 'menu'])
 def start(message):
@@ -102,39 +121,32 @@ def get_time_day(message):
         bot.send_message(message.chat.id, "Вакансий по запросу не найдено", reply_markup=types.ReplyKeyboardRemove())
     else:
         vac = data[0]
-        str = f"{vac['vacancy']}\n" \
-              f"Компания: {vac['employer']}" \
-              f"от{vac['salaryFrom']} до{vac['salaryTo']}\n" \
-              f"Адреc: {vac['address']} \n" \
-              f"Описание: {vac['requirement']}\n"\
-              f"{vac['timeDay']}" \
-              f"Ссылка: {vac['alternate_url']}"
         markup = types.ReplyKeyboardMarkup()
         btn1 = types.KeyboardButton("Следующая")
         btn2 = types.KeyboardButton("Меню")
         markup.row(btn1,btn2)
-        bot.send_message(message.chat.id, str, reply_markup=markup)
+        bot.send_message(message.chat.id, send_vacancy(vac), reply_markup=markup)
         bot.register_next_step_handler(message, next_vacancy)
 
 
 def next_vacancy(message):
-    if message.text == 'Следующая':
-        global k
+    global k
+    if message.text == 'Следующая' and k < len(data)-1:
         vac = data[k]
-        str = f"{vac['vacancy']}\n" \
-              f"Компания: {vac['employer']}" \
-              f"от{vac['salaryFrom']} до{vac['salaryTo']}\n" \
-              f"Адреc: {vac['address']} \n" \
-              f"Описание: {vac['requirement']}\n" \
-              f"{vac['timeDay']}\n" \
-              f"Ссылка: {vac['alternate_url']}"
         markup = types.ReplyKeyboardMarkup()
         btn1 = types.KeyboardButton("Следующая")
         btn2 = types.KeyboardButton("Меню")
         markup.row(btn1, btn2)
-        bot.send_message(message.chat.id, str, reply_markup=markup)
+        bot.send_message(message.chat.id, send_vacancy(vac), reply_markup=markup)
         k += 1
         bot.register_next_step_handler(message, next_vacancy)
+    elif message.text == 'Следующая' and k == len(data)-1:
+        vac = data[k]
+        markup = types.ReplyKeyboardMarkup()
+        btn = types.KeyboardButton("Меню")
+        markup.add(btn)
+        bot.send_message(message.chat.id, send_vacancy(vac), reply_markup=markup)
+        bot.register_next_step_handler(message, start)
     elif message.text == 'Меню':
         bot.send_message(message.chat.id, "Напишите /menu", reply_markup=types.ReplyKeyboardRemove())
     else:

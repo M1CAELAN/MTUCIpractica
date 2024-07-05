@@ -8,5 +8,3 @@ RUN pip install -r req.txt
 
 
 EXPOSE 5000
-
-
