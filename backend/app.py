@@ -12,7 +12,7 @@ load_dotenv()
 
 app = Flask(__name__)
 api = Api()
-app.config['SQLALCHEMY_DATABASE_URI'] = f"postgresql://postgres:{os.getenv('PASSWORD')}@localhost:5432/practica"
+app.config['SQLALCHEMY_DATABASE_URI'] = f"postgresql://postgres:{os.getenv('POSTGRES_PASSWORD')}@db:5432/{os.getenv('POSTGRES_DB')}"
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
@@ -86,6 +86,7 @@ def add_name(text, area):
     data = get_data_from_hh(url)
     parser(data, text, area)
 
+
 def parser(data, text, area):
     quantity_pagination = round(data['found'] / 100, 0) + 1
     page = 0
@@ -143,6 +144,7 @@ def serch(regs, area):
                     return reg_id
     return 0
 
+
 class Vacancy(Resource):
     @staticmethod
     def get():
@@ -160,6 +162,7 @@ class Vacancy(Resource):
         else:
             return vacancy_shema.dump(VacancyModel.query.filter(VacancyModel.salaryFrom >= salary_from)
                                       .filter(VacancyModel.salaryTo <= salary_to).all())
+
 
 class region(Resource):
     @staticmethod
@@ -181,4 +184,4 @@ api.add_resource(region, '/region/<string:area>')
 api.init_app(app)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0')

@@ -40,7 +40,7 @@ def open_search(message):
 
 
 def get_id_region(message):
-    url = f"http://127.0.0.1:5000/region/{message.text}"
+    url = f"http://app:5000/region/{message.text}"
     data = requests.get(url).json()
     global region_id
     if data.get('id') is not None:
@@ -94,7 +94,7 @@ def get_time_day(message):
     global time_day
     if message.text != "Пропустить":
         time_day = message.text
-    url = f"http://127.0.0.1:5000/vacancy?vacancy={name}&salaryFrom={salary_from}&salaryTo={salary_to}&" \
+    url = f"http://app:5000/vacancy?vacancy={name}&salaryFrom={salary_from}&salaryTo={salary_to}&" \
           f"timeDay={time_day}&area={region_id}"
     global data
     data = requests.get(url).json()
