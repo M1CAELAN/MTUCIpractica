@@ -60,6 +60,15 @@ class VacancyModelShema(ma.SQLAlchemyAutoSchema):
         model = VacancyModel
 
 
+#Очмстка базы данных
+def reset_table():
+    al = VacancyModel.query.all()
+    for a in range(len(al)):
+        x = VacancyModel.query.get(al[a].id)
+        db.session.delete(x)
+        db.session.commit()
+
+
 #Запрос к API hh.ru
 def get_data_from_hh(url):
     user = get_headers()
@@ -75,15 +84,6 @@ def get_headers():
         'headers': headers
     }
     return persona
-
-
-#Очмстка базы данных
-def reset_table():
-    al = VacancyModel.query.all()
-    for a in range(len(al)):
-        x = VacancyModel.query.get(al[a].id)
-        db.session.delete(x)
-        db.session.commit()
 
 
 #Добавления данных В БД
