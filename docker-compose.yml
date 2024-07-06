@@ -17,8 +17,6 @@ services:
     build: backend
     command:
       bash -c "flask db upgrade && python app.py"
-    volumes:
-      - .:/usr/src/app/back
     restart: on-failure:10
     ports:
       - 5000:5000
@@ -30,8 +28,8 @@ services:
   bot:
     container_name: bot
     build: frontend
-    volumes:
-      - .:/usr/src/app/front
+    command:
+      bash -c "python main.py"
     ports:
       - 8080:8080
     networks:

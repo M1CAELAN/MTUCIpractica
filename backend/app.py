@@ -7,7 +7,7 @@ from flask_migrate import Migrate
 from flask_restful import Api, Resource
 from flask_sqlalchemy import SQLAlchemy
 
-
+#Загрузка окружения
 load_dotenv()
 
 app = Flask(__name__)
@@ -19,6 +19,7 @@ migrate = Migrate(app, db)
 ma = Marshmallow(app)
 
 
+#Модель описывающая базу данных
 class VacancyModel(db.Model):
     __tablename__ = 'Vacancy'
 
@@ -53,17 +54,20 @@ class VacancyModel(db.Model):
                 self.responsibility, self.alternate_url, self.time, self.timeDay]
 
 
+#Класс сериализации для базы данных
 class VacancyModelShema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = VacancyModel
 
 
+#Запрос к API hh.ru
 def get_data_from_hh(url):
     user = get_headers()
     data = requests.get(url, headers=user['headers'], timeout=5).json()
     return data
 
 
+#Формирование headers
 def get_headers():
     headers = {
         'user-agent': os.getenv('USER_AGENT')}
@@ -72,6 +76,8 @@ def get_headers():
     }
     return persona
 
+
+#Очмстка базы данных
 def reset_table():
     al = VacancyModel.query.all()
     for a in range(len(al)):
@@ -80,13 +86,14 @@ def reset_table():
         db.session.commit()
 
 
+#Добавления данных В БД
 def add_name(text, area):
     reset_table()
     url = f'https://api.hh.ru/vacancies?text={text}&search_field=name&per_page=100&area={area}'
     data = get_data_from_hh(url)
     parser(data, text, area)
 
-
+#Запрос и добавление данных В БД
 def parser(data, text, area):
     quantity_pagination = round(data['found'] / 100, 0) + 1
     page = 0
@@ -132,6 +139,7 @@ def parser(data, text, area):
         page += 1
 
 
+#Поиск id ркгиона в словаре по названию
 def serch(regs, area):
     for reg in regs:
         if reg['name'].lower() == area.lower():
@@ -145,6 +153,7 @@ def serch(regs, area):
     return 0
 
 
+#Обработчик запросов, который возвращает нужные пользователю вакансии
 class Vacancy(Resource):
     @staticmethod
     def get():
@@ -164,7 +173,8 @@ class Vacancy(Resource):
                                       .filter(VacancyModel.salaryTo <= salary_to).all())
 
 
-class region(Resource):
+#Обработчик запросов, который возвращает id региона
+class Region(Resource):
     @staticmethod
     def get(area):
         url = 'https://api.hh.ru/areas'
@@ -179,7 +189,7 @@ class region(Resource):
 
 
 api.add_resource(Vacancy, '/vacancy')
-api.add_resource(region, '/region/<string:area>')
+api.add_resource(Region, '/region/<string:area>')
 
 api.init_app(app)
 

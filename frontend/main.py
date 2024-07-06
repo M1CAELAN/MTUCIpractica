@@ -4,6 +4,7 @@ import requests
 from telebot import types
 from dotenv import load_dotenv
 
+#Загрузка окружения
 load_dotenv()
 
 bot = telebot.TeleBot(os.getenv('BOT_TOKEN'))
@@ -17,8 +18,9 @@ data = None
 k = 1
 
 
+#Формирорование из словоря с данными о вакансии строки ответа
 def send_vacancy(vac):
-    salary = 'цена не указана\n'
+    salary = 'зарплата не указана\n'
     if int(vac['salaryFrom']) != 0 and int(vac['salaryTo']) != 0:
         salary = f"от {vac['salaryFrom']} до {vac['salaryTo']}\n"
     elif int(vac['salaryFrom']) != 0 and int(vac['salaryTo']) == 0:
@@ -26,7 +28,7 @@ def send_vacancy(vac):
     elif int(vac['salaryFrom']) == '0' and int(vac['salaryTo']) != 0:
         salary = f"до {vac['salaryTo']}\n"
     mes = f"{vac['vacancy']}\n" \
-          f"Компания: {vac['employer']}\n" + salary +\
+          f"Компания: {vac['employer']}\n" + salary + \
           f"Адреc: {vac['address']} \n" \
           f"Требования: {vac['requirement']}\n" \
           f"Описание: {vac['requirement']}\n" \
@@ -36,6 +38,7 @@ def send_vacancy(vac):
     return mes
 
 
+#Старовая позиция, она же меню
 @bot.message_handler(commands=['start', 'menu'])
 def start(message):
     global k
@@ -48,6 +51,7 @@ def start(message):
     bot.register_next_step_handler(message, open_search)
 
 
+#Начало поиска
 def open_search(message):
     if message.text == "Найти вакансию":
         bot.send_message(message.chat.id, "Введите регион, в котором ищете вакансии",
@@ -58,6 +62,7 @@ def open_search(message):
                          reply_markup=types.ReplyKeyboardRemove())
 
 
+#Получение и запоминание id региона
 def get_id_region(message):
     url = f"http://app:5000/region/{message.text}"
     data = requests.get(url).json()
@@ -71,9 +76,10 @@ def get_id_region(message):
         bot.register_next_step_handler(message, get_id_region)
 
 
+#Получение и запоминание названия вакансии
 def get_name(message):
     global name
-    name = message.text.replace(" ", "+")
+    name = message.text
     markup = types.ReplyKeyboardMarkup()
     btn = types.KeyboardButton("Пропустить")
     markup.add(btn)
@@ -82,6 +88,7 @@ def get_name(message):
     bot.register_next_step_handler(message, get_salary_from)
 
 
+#Получение и запоминание нижниний границы зарплаты
 def get_salary_from(message):
     global salary_from
     if message.text != "Пропустить":
@@ -94,6 +101,7 @@ def get_salary_from(message):
     bot.register_next_step_handler(message, get_salary_to)
 
 
+#Получение и запоминание верхней границы зарплаты
 def get_salary_to(message):
     global salary_to
     if message.text != "Пропустить":
@@ -109,6 +117,7 @@ def get_salary_to(message):
     bot.register_next_step_handler(message, get_time_day)
 
 
+#Получение и запоминание вида занятости, а так же запрос к беку и вывод первой вакансии
 def get_time_day(message):
     global time_day
     if message.text != "Пропустить":
@@ -129,6 +138,7 @@ def get_time_day(message):
         bot.register_next_step_handler(message, next_vacancy)
 
 
+#Функция последовательного вывода найденых вакансий
 def next_vacancy(message):
     global k
     if message.text == 'Следующая' and k < len(data)-1:
